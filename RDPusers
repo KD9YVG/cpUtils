@@ -1,0 +1,1 @@
+(Get-LocalGroupMember -Group "Remote Desktop Users").Name + (Get-LocalGroupMember -Group "Administrators").Name
