@@ -1,1 +1,21 @@
-(Get-LocalGroupMember -Group "Remote Desktop Users").Name + (Get-LocalGroupMember -Group "Administrators").Name
+# List users in the local "Remote Desktop Users" group
+Write-Output "Users in the local 'Remote Desktop Users' group:"
+Get-LocalGroupMember -Group "Remote Desktop Users" | Select-Object Name, ObjectClass
+
+# Check users allowed through Group Policy (RDP logon rights)
+Write-Output "`nUsers with 'Allow log on through Remote Desktop Services' rights (Group Policy):"
+$rdpRight = "SeRemoteInteractiveLogonRight"
+
+# Get local security policy settings
+try {
+    $seceditTemp = "$env:TEMP\secpol.cfg"
+    secedit /export /cfg $seceditTemp | Out-Null
+    $secpol = Get-Content $seceditTemp
+    $rdpUsers = $secpol | Where-Object { $_ -match "$rdpRight" } | ForEach-Object {
+        ($_ -split "=")[1].Trim() -split ","
+    }
+    $rdpUsers | ForEach-Object { Write-Output $_ }
+    Remove-Item $seceditTemp
+} catch {
+    Write-Warning "Unable to read Group Policy RDP settings: $_"
+}
