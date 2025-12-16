@@ -1,1 +1,21 @@
-(Get-LocalGroupMember -Group "Remote Desktop Users").Name + (Get-LocalGroupMember -Group "Administrators").Name
+# List users in the local "Remote Desktop Users" group
+Write-Output "Users in the local 'Remote Desktop Users' group:"
+Get-LocalGroupMember -Group "Remote Desktop Users" | Select-Object Name, ObjectClass
+
+# List users allowed to log on via Remote Desktop (RDP) through policy
+Write-Output "`nUsers with 'Allow log on through Remote Desktop Services' rights (Group Policy / Local Policy):"
+$rdpRight = "SeRemoteInteractiveLogonRight"
+
+# Use ntrights via PowerShell (requires RSAT or Windows Admin Tools) or parse secedit export
+$tempFile = "$env:TEMP\secpol.cfg"
+secedit /export /cfg $tempFile | Out-Null
+if (Test-Path $tempFile) {
+    $secpol = Get-Content $tempFile
+    $rdpUsers = $secpol | Where-Object { $_ -match "$rdpRight" } | ForEach-Object {
+        ($_ -split "=")[1].Trim() -split ","
+    }
+    $rdpUsers | ForEach-Object { Write-Output $_ }
+    Remove-Item $tempFile
+} else {
+    Write-Warning "Could not export security policy. Run PowerShell as Administrator."
+}

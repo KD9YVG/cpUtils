@@ -1,0 +1,26 @@
+function Resolve-SID {
+    param([string[]]$SIDs)
+    foreach ($sidString in $SIDs) {
+        try {
+            $sid = New-Object System.Security.Principal.SecurityIdentifier $sidString
+            $account = $sid.Translate([System.Security.Principal.NTAccount])
+            [PSCustomObject]@{
+                SID  = $sidString
+                Name = $account.Value
+            }
+        } catch {
+            [PSCustomObject]@{
+                SID  = $sidString
+                Name = "Cannot resolve"
+            }
+        }
+    }
+}
+
+# Example: SIDs from Remote Desktop Users group or policy
+$exampleSIDs = @(
+    "S-1-5-32-555",
+    "S-1-5-21-1234567890-123456789-123456789-1001"
+)
+
+Resolve-SID -SIDs $exampleSIDs
